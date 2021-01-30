@@ -1,0 +1,18 @@
+{
+  "name": "ship-parcer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "dateformat": "^4.5.0",
+    "minimist": "^1.2.5",
+    "progress": "^2.0.3",
+    "puppeteer": "^5.5.0"
+  }
+}

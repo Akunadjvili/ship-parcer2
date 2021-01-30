@@ -1,0 +1,137 @@
+{
+  "results": [
+    {
+      "desc": "Fishing [CY]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6181129",
+      "value": "HHH",
+      "id": 6181129,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing [CY]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:123678",
+      "value": "HHH",
+      "id": 123678,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing [GB]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6332219",
+      "value": "HHH",
+      "id": 6332219,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Other [CN]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6261321",
+      "value": "HHH",
+      "id": 6261321,
+      "meta": { "typeColorId": 3 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Passenger [CN]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:4158812",
+      "value": "HHH",
+      "id": 4158812,
+      "meta": { "typeColorId": 6 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing [CN]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:548226",
+      "value": "HHH",
+      "id": 548226,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Cargo [CN]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:642433",
+      "value": "HHH",
+      "id": 642433,
+      "meta": { "typeColorId": 7 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing [CN]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:508989",
+      "value": "HHH",
+      "id": 508989,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing [AL]",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6139489",
+      "value": "HHH",
+      "id": 6139489,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing ",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6142279",
+      "value": "HHH",
+      "id": 6142279,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Fishing ",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:5187531",
+      "value": "HHH",
+      "id": 5187531,
+      "meta": { "typeColorId": 2 },
+      "inFleet": 0,
+      "userId": null
+    },
+    {
+      "desc": "Preferred Channel Starboard Hand ",
+      "type": "Vessel",
+      "typeId": 1,
+      "url": "/en/ais/details/ships/shipid:6170389",
+      "value": "HHH",
+      "id": 6170389,
+      "meta": { "typeColorId": 1 },
+      "inFleet": 0,
+      "userId": null
+    }
+  ],
+  "hasMoreResults": true
+}
