@@ -3,19 +3,14 @@ const puppeteer = require("puppeteer");
 const dateFormat = require("dateformat");
 const filesystem = require("fs");
 const parseArgs = require("minimist")(process.argv.slice(2));
-// const ProgressBar = require("progress");
+const ProgressBar = require("progress");
 
-// const bar = new ProgressBar(":total", { total: 10 });
-// bar.tick();
-// bar.tick();
-// bar.tick();
-// bar.tick();
 // Update progress and draw to screen:
 
 const homeURL = "https://www.marinetraffic.com";
 // const searchValue = "DRAWSKO";
 let searchValue = parseArgs.s ? parseArgs.s.trim() : "";
-// searchValue = "";
+searchValue = "DRS";
 const pagesCount =
   Number(parseArgs.p) in [(10, 20, 50)] ? Number(parseArgs.p) : 10;
 
@@ -25,6 +20,15 @@ let page;
 const transformDate = (stamp) => {
   const date = new Date(stamp * 1000);
   return dateFormat(date, "dd.mm-yy");
+};
+const clearUrl = (url) => {
+  const cropIndex = url.indexOf("/mmsi");
+  const cropUrl = url.slice(0, cropIndex);
+  return `${homeURL}${cropUrl}`;
+};
+const getLinks = () => {
+  const links = document.querySelectorAll(".search_index_link");
+  return Array.from(links, (a) => a.getAttribute("href"));
 };
 
 const ships = [];
@@ -59,7 +63,6 @@ const endScrapping = async () => {
 let scrape = async () => {
   browser = await puppeteer.launch({ headless: true });
   page = await browser.newPage();
-  // page.on("response", getSearchJSON);
   await page.goto(
     `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}/search_type:1/page:1/keyword:${searchValue}`,
     { waitUntil: "load" }
@@ -74,20 +77,21 @@ let scrape = async () => {
     const span = document.querySelector("#indexForm + span");
     return span ? span.textContent.match(/\d+/)[0] : 1;
   });
-  const clearUrl = (url) => {
-    const cropIndex = url.indexOf("/mmsi");
-    const cropUrl = url.slice(0, cropIndex);
-    return `${homeURL}${cropUrl}`;
-  };
-  const getLinks = () => {
-    const links = document.querySelectorAll(".search_index_link");
-    return Array.from(links, (a) => a.getAttribute("href"));
-  };
-
+  const bar1 = new ProgressBar(
+    "  Загрузка списка кораблей [:bar] страница [:current из :total]",
+    {
+      complete: "*",
+      incomplete: " ",
+      // width: 1024 /* something longer than the terminal width */,
+      total: Number(count),
+    }
+  );
   let links = [];
   links = await page.evaluate(getLinks);
+  bar1.tick(1);
   if (count > 1) {
-    for (let i = 2; i <= 2; i += 1) {
+    for (let i = 2; i <= count; i += 1) {
+      bar1.tick(1);
       await page.goto(
         `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}/search_type:1/page:${i}/keyword:${searchValue}`,
         { waitUntil: "load" }
@@ -103,8 +107,19 @@ let scrape = async () => {
       const search = `${homeURL}/vesselDetails/voyageInfo/shipid:${id}`;
       ships.push({ url, search, id });
     }
-    // page.on("response", getVesselJSONList);
+
+    const bar = new ProgressBar(
+      "  Загрузка информации о кораблях [:bar]  [:current из :total]",
+      {
+        complete: "=",
+        incomplete: " ",
+        // width: 1024 /* something longer than the terminal width */,
+        total: ships.length,
+      }
+    );
+
     for (const ship of ships) {
+      bar.tick(1);
       await page.goto(ship.url, { waitUntil: "load" });
       const finalResponse = await page.waitForResponse(
         (response) => response.url() === ship.search
@@ -113,11 +128,11 @@ let scrape = async () => {
     }
     endScrapping();
   }
-  
+
   return links;
 };
 
 scrape().then((value) => {
   console.log(value);
-  await browser.close();
+  browser.close();
 });
