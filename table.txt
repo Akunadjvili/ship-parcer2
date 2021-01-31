@@ -1,1 +1,0 @@
-Vessel: DRS1	Departure Port: платно || нет данных || ошибка	 Date Departure: 01.01-70

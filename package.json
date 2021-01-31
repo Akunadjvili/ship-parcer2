@@ -12,6 +12,7 @@
   "devDependencies": {
     "dateformat": "^4.5.0",
     "minimist": "^1.2.5",
+    "minimist-options": "^4.1.0",
     "progress": "^2.0.3",
     "puppeteer": "^5.5.0"
   }

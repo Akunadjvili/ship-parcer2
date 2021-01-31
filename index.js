@@ -1,18 +1,76 @@
 //npm install puppeteer puppeteer-core -D
+const path = require("path");
 const puppeteer = require("puppeteer");
 const dateFormat = require("dateformat");
 const filesystem = require("fs");
-const parseArgs = require("minimist")(process.argv.slice(2));
+const buildOptions = require("minimist-options");
+const minimist = require("minimist");
 const ProgressBar = require("progress");
 
-// Update progress and draw to screen:
+const dataJSON = path.resolve(path.dirname(__filename), "result.json");
+const dataTable = path.resolve(path.dirname(__filename), "table.txt");
+const workFiles = [dataJSON, dataTable];
+for (const file of workFiles) {
+  if (filesystem.existsSync(file)) {
+    try {
+      filesystem.unlinkSync(file);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+  }
+}
 
+const options = buildOptions({
+  search: {
+    type: "string",
+    alias: "s",
+    default: "",
+  },
+
+  format: {
+    type: "boolean",
+    alias: "f",
+    default: false,
+  },
+
+  page: {
+    type: "number",
+    alias: "p",
+    default: 50,
+  },
+  timeout: {
+    type: "number",
+    alias: "t",
+    default: 5000,
+  },
+  limit: {
+    type: "number",
+    alias: "l",
+    default: 0,
+  },
+
+  published: "boolean",
+
+  // Special option for positional arguments (`_` in minimist)
+  arguments: "string",
+});
+
+const parseArgs = minimist(process.argv.slice(2), options);
+
+const outputFormat = parseArgs.format;
+const limit = parseArgs.limit;
 const homeURL = "https://www.marinetraffic.com";
 // const searchValue = "DRAWSKO";
-let searchValue = parseArgs.s ? parseArgs.s.trim() : "";
-// searchValue = "DRS";
-const pagesCount =
-  Number(parseArgs.p) in [(10, 20, 50)] ? Number(parseArgs.p) : 10;
+
+let searchValue = parseArgs.search ? parseArgs.search.trim() : "";
+let pagesCount;
+if (parseArgs.page) {
+  pagesCount = Number(parseArgs.page);
+  pagesCount = [10, 20, 50].includes(pagesCount) ? pagesCount : 50;
+} else {
+  pagesCount = 50;
+}
 
 let browser;
 let page;
@@ -34,7 +92,7 @@ const getLinks = () => {
 
 const ships = [];
 
-const endScrapping = async () => {
+const saveData = async () => {
   let table = "";
 
   for (const ship of ships) {
@@ -79,7 +137,7 @@ const getProgressBar = (line, maximum) => {
 };
 
 let scrape = async () => {
-  browser = await puppeteer.launch({ headless: false });
+  browser = await puppeteer.launch({ headless: true });
   page = await browser.newPage();
   await page.goto(
     `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}/search_type:1/page:1/keyword:${searchValue}`,
@@ -97,7 +155,7 @@ let scrape = async () => {
   });
 
   bar = getProgressBar(
-    "  Загрузка списка кораблей [:bar] страница [:current из :total]",
+    "  Загрузка: Cписок кораблей [:bar] страница [:current из :total]",
     Number(count)
   );
   let links = [];
@@ -123,7 +181,7 @@ let scrape = async () => {
     }
 
     bar = getProgressBar(
-      "  Загрузка информации о кораблях [:bar]  [:current из :total]",
+      "  Загрузка: корабли [:bar] корабль [:current из :total]",
       ships.length
     );
 
@@ -148,7 +206,7 @@ let scrape = async () => {
           }, 5000)
           .then((response) => response.json())
           .catch((err) => {}),
-        page.goto(ship.url, { waitUntil: "load" }),
+        await page.goto(ship.url, { waitUntil: "load" }),
       ]);
       [ship.voyageInfo, ship.vesselInfo, ship.latestPosition] = [
         voyageInfo,
@@ -156,7 +214,7 @@ let scrape = async () => {
         latestPosition,
       ];
     }
-    endScrapping();
+    saveData();
   }
 
   return links;
