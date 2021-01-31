@@ -10,12 +10,13 @@ const ProgressBar = require("progress");
 const homeURL = "https://www.marinetraffic.com";
 // const searchValue = "DRAWSKO";
 let searchValue = parseArgs.s ? parseArgs.s.trim() : "";
-searchValue = "DRS";
+// searchValue = "DRS";
 const pagesCount =
   Number(parseArgs.p) in [(10, 20, 50)] ? Number(parseArgs.p) : 10;
 
 let browser;
 let page;
+let bar;
 
 const transformDate = (stamp) => {
   const date = new Date(stamp * 1000);
@@ -37,16 +38,24 @@ const endScrapping = async () => {
   let table = "";
 
   for (const ship of ships) {
-    console.log(ship);
-    let name, timestamp;
-    if (ship.data.departurePort) {
-      name = ship.data.departurePort.name;
-      timestamp = ship.data.departurePort.timestamp;
+    let name, timestamp, vesselName;
+
+    if (ship.voyageInfo && ship.voyageInfo.departurePort) {
+      name = ship.voyageInfo.departurePort.name;
+      timestamp = ship.voyageInfo.departurePort.timestamp
+        ? ship.voyageInfo.departurePort.timestamp
+        : 0;
+      vesselName = ship.voyageInfo.vesselName;
     } else {
-      name = "locked-buy";
+      name = "платно || нет данных || ошибка";
       timestamp = 0;
+      if (ship.vesselInfo) {
+        vesselName = ship.vesselInfo.name;
+      }
     }
-    table += `${name} ${transformDate(timestamp)}\n`;
+    table += `Vessel: ${vesselName}\tDeparture Port: ${name}\t Date Departure: ${transformDate(
+      timestamp
+    )}\n`;
   }
   filesystem.writeFile("table.txt", table, function (err) {
     if (err) {
@@ -60,8 +69,17 @@ const endScrapping = async () => {
   });
 };
 
+const getProgressBar = (line, maximum) => {
+  return new ProgressBar(line, {
+    complete: "=",
+    incomplete: " ",
+    width: 50,
+    total: maximum,
+  });
+};
+
 let scrape = async () => {
-  browser = await puppeteer.launch({ headless: true });
+  browser = await puppeteer.launch({ headless: false });
   page = await browser.newPage();
   await page.goto(
     `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}/search_type:1/page:1/keyword:${searchValue}`,
@@ -77,21 +95,17 @@ let scrape = async () => {
     const span = document.querySelector("#indexForm + span");
     return span ? span.textContent.match(/\d+/)[0] : 1;
   });
-  const bar1 = new ProgressBar(
+
+  bar = getProgressBar(
     "  Загрузка списка кораблей [:bar] страница [:current из :total]",
-    {
-      complete: "*",
-      incomplete: " ",
-      // width: 1024 /* something longer than the terminal width */,
-      total: Number(count),
-    }
+    Number(count)
   );
   let links = [];
+  bar.tick(1);
   links = await page.evaluate(getLinks);
-  bar1.tick(1);
   if (count > 1) {
     for (let i = 2; i <= count; i += 1) {
-      bar1.tick(1);
+      bar.tick(1);
       await page.goto(
         `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}/search_type:1/page:${i}/keyword:${searchValue}`,
         { waitUntil: "load" }
@@ -108,23 +122,39 @@ let scrape = async () => {
       ships.push({ url, search, id });
     }
 
-    const bar = new ProgressBar(
+    bar = getProgressBar(
       "  Загрузка информации о кораблях [:bar]  [:current из :total]",
-      {
-        complete: "=",
-        incomplete: " ",
-        // width: 1024 /* something longer than the terminal width */,
-        total: ships.length,
-      }
+      ships.length
     );
 
     for (const ship of ships) {
       bar.tick(1);
-      await page.goto(ship.url, { waitUntil: "load" });
-      const finalResponse = await page.waitForResponse(
-        (response) => response.url() === ship.search
-      );
-      ship.data = await finalResponse.json();
+      const [voyageInfo, vesselInfo, latestPosition] = await Promise.all([
+        page
+          .waitForResponse((res) => {
+            return res.url().includes("/vesselDetails/voyageInfo/shipid:");
+          }, 5000)
+          .then((response) => response.json())
+          .catch((err) => {}),
+        page
+          .waitForResponse((res) => {
+            return res.url().includes("/vesselDetails/vesselInfo/shipid:");
+          }, 5000)
+          .then((response) => response.json())
+          .catch((err) => {}),
+        page
+          .waitForResponse((res) => {
+            return res.url().includes("/vesselDetails/latestPosition/shipid:");
+          }, 5000)
+          .then((response) => response.json())
+          .catch((err) => {}),
+        page.goto(ship.url, { waitUntil: "load" }),
+      ]);
+      [ship.voyageInfo, ship.vesselInfo, ship.latestPosition] = [
+        voyageInfo,
+        vesselInfo,
+        latestPosition,
+      ];
     }
     endScrapping();
   }
@@ -132,7 +162,9 @@ let scrape = async () => {
   return links;
 };
 
-scrape().then((value) => {
-  console.log(value);
-  browser.close();
-});
+scrape()
+  .then((value) => {
+    console.log("Loaded OK");
+    browser.close();
+  })
+  .catch((err) => console.log("Error"));

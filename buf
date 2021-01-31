@@ -157,7 +157,30 @@ function download(content, fileName, contentType) {
     a.click();
 }
 download(jsonData, 'json.txt', 'text/plain');
+      // console.log(response);
+      // ship.voyageInfo = responses[0];
+      // ship.vesselInfo = responses[1];
+      // ship.latestPosition = responses[2];
 
+      // page.goto(ship.url, { waitUntil: "load" });
+      // ship.voyageInfo = await page
+      //   .waitForResponse((response) =>
+      //     response.url().includes("/vesselDetails/voyageInfo/shipid:")
+      //   )
+      //   .then((response) => response.json())
+      //   .catch((err) => {});
+      // ship.vesselInfo = await page
+      //   .waitForResponse((response) =>
+      //     response.url().includes("/vesselDetails/vesselInfo/shipid:")
+      //   )
+      //   .then((response) => response.json())
+      //   .catch((err) => {});
+      // ship.latestPosition = await page
+      //   .waitForResponse((response) =>
+      //     response.url().includes("/vesselDetails/latestPosition/shipid:")
+      //   )
+      //   .then((response) => response.json())
+      //   .catch((err) => {});
 
   // await page.click("header");
   // await page.focus("#searchMT");

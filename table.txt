@@ -1,6 +1,1 @@
-CHORNOMORSK 26.01-21
-BRAKE 19.01-21
-NORDHAFEN HANNOVER 30.01-21
-MELBOURNE 11.11-20
-FOURCHON 08.07-19
-SZCZECIN 06.10-14
+Vessel: DRS1	Departure Port: платно || нет данных || ошибка	 Date Departure: 01.01-70

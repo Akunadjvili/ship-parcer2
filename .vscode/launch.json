@@ -10,7 +10,7 @@
       "name": "Node",
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}\\index.js",
-      "args": ["-s DRAWSKO", "-p 10"]
+      "args": ["-s DRS1", "-p 10"]
     }
   ]
 }
