@@ -1,7 +1,7 @@
 Скрипт предназначен для получения доступных данных с сайта:
 [https://www.marinetraffic.com/](https://www.marinetraffic.com/)
 
-![Alt process](https://drive.google.com/file/d/1aJwG_U28rOXkzyyvSRZ_W2Xgmo8OYdBj/view?usp=sharing)
+![Alt process](https://drive.google.com/uc?export=view&id=1aJwG_U28rOXkzyyvSRZ_W2Xgmo8OYdBj)
 
 # Запуск
 
@@ -31,6 +31,6 @@ node ship-scraper.js [--ключ=значение [,--ключ=значение,
 1. result.csv - содержащий по возможности таблицу в формате: имя суда порт; отправления; дата отправления;
 2. result.json - содержит данные JSON список [voyageInfo, vesselInfo, latestPosition], соответственно если данные получены.
 
-# Результат
+# Отмазка
 
-Написано криво, т.к. не до конца принял промисы :)
+Написано криво :)
