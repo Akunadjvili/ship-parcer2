@@ -123,25 +123,29 @@ const saveToFile = (name, data) => {
 const ships = [];
 
 const saveData = async () => {
-  let table = "";
+  let table = "vesselName;departurePort;departurePort.timestamp\n";
 
   for (const ship of ships) {
-    let departurePort = "-==missing data==-", timestamp = 0, vesselName = "-==missing data==-";
+    let departurePort = `-==missing data==-()`, timestamp = 0, vesselName = `-==missing data==- (${ship.id})`;
 
     if (ship.voyageInfo && ship.voyageInfo.departurePort) {
       departurePort = ship.voyageInfo.departurePort.name;
       timestamp = ship.voyageInfo.departurePort.timestamp
         ? ship.voyageInfo.departurePort.timestamp
         : 0;
-      vesselName = ship.voyageInfo.vesselName;
+      vesselName = `${ship.voyageInfo.vesselName} (${ship.id})`;
     } else {
       departurePort = "-==missing data==-";
       timestamp = 0;
       if (ship.vesselInfo) {
-        vesselName = ship.vesselInfo.name;
+        vesselName = `${ship.vesselInfo.name} (${ship.id})`;
       }
     }
-    table += `${vesselName};${departurePort};${transformDate(timestamp, dateformat)};\n`;
+    if (timestamp) {
+      table += `${vesselName};${departurePort};${transformDate(timestamp, dateformat)}\n`;
+    } else {
+      table += `${vesselName};${departurePort};"-==missing data==-"\n`;
+    }
   }
   saveToFile("result.csv", table);
   saveToFile("result.json", JSON.stringify(ships));
@@ -160,7 +164,7 @@ let scrape = async () => {
   browser = await puppeteer.launch({ headless: browserVisible });
   page = await browser.newPage();
   page.setDefaultTimeout(timeout)
-  // page.setDefaultNavigationTimeout(timeout)
+  page.setDefaultNavigationTimeout(0)
   await page.goto(
     `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}${searchType}/page:1/keyword:${searchValue}`,
     { waitUntil: "load" }
@@ -174,16 +178,16 @@ let scrape = async () => {
     const span = document.querySelector("#indexForm + span");
     return span ? Number(span.textContent.match(/\d+/)[0]) : 1;
   });
+  count = limit ? Math.min(count, limit) : count
 
   bar = getProgressBar(
-    "  Download: List of ships [:bar] page [:current from :total]", Number(count)
-  );
+    "  Download: List of ships [:bar] page [:current from :total]", count);
   let links = [];
-  console.log(`Found ${count} pages. Processing...`);
+
+  console.log(`\nFound ${count} pages. Processing...`);
   bar.tick(1);
   links = await page.evaluate(getLinks);
   if (count > 1) {
-    count = limit ? Math.min(count, limit) : count
     for (let i = 2; i <= count; i += 1) {
       bar.tick(1);
       await page.goto(
@@ -208,6 +212,7 @@ let scrape = async () => {
 
     for (const ship of ships) {
       bar.tick(1);
+      // await page.waitForTimeout(1000)
       const [voyageInfo, vesselInfo, latestPosition] = await Promise.all([
         page
           .waitForResponse((res) => {
@@ -227,7 +232,8 @@ let scrape = async () => {
           })
           .then((response) => response.json())
           .catch((err) => { }),
-        await page.goto(ship.url, { waitUntil: "load" }),
+        await page.goto(ship.url, { waitUntil: "load" }).catch((err) => { console.log(`#Try next time ${response.url()}`); })
+
       ]);
       [ship.voyageInfo, ship.vesselInfo, ship.latestPosition] = [
         voyageInfo,
