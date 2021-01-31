@@ -1,0 +1,28 @@
+{
+  "Object to console": {
+    "scope": "javascript,typescript",
+    "prefix": "q",
+    "body": ["console.log($1);", "$2"],
+    "description": "Log output to console"
+  },
+  "String to console": {
+    "scope": "javascript,typescript",
+    "prefix": "s",
+    "body": ["console.log('$1');", "$2"],
+    "description": "Log output to console"
+  },
+  "Style default": {
+    "scope": "html",
+    "prefix": "ss",
+    "body": ["<link rel='stylesheet' href='./css/$1.css'>\n"],
+    "description": "Подключение стилей ..."
+  },
+  "Attach normalize": {
+    "scope": "html",
+    "prefix": "norma",
+    "body": [
+      "<link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/modern-normalize@1.0.0/modern-normalize.min.css'/>"
+    ],
+    "description": "Подключение нормализатора"
+  }
+}

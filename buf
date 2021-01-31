@@ -1,3 +1,4 @@
+
 const waitForResponse = (page, ship) => {
   return new Promise((resolve) => {
     page.on("response", async function callback(response) {
