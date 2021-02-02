@@ -83,8 +83,8 @@ const cookieModalAcceptSelector =
 const fileName = sanitize(searchValue);
 const searchValue = encodeURI(searchValue);
 
-const dataJSON = path.resolve(path.dirname(__filename), fileName + ".json");
-const dataTable = path.resolve(path.dirname(__filename), fileName + ".csv");
+const dataJSON = path.resolve(path.dirname(__filename), `${fileName}.json`);
+const dataTable = path.resolve(path.dirname(__filename), `${fileName}.csv`);
 const workFiles = [dataJSON, dataTable];
 for (const file of workFiles) {
   if (filesystem.existsSync(file)) {
@@ -154,8 +154,8 @@ const saveData = async () => {
       table += `${vesselName};${departurePort};"-==missing data==-"\n`;
     }
   }
-  saveToFile(fileName + ".csv", table);
-  saveToFile(fileName + ".json", JSON.stringify(ships));
+  saveToFile(`${fileName}.csv`, table);
+  saveToFile(`${fileName}.json`, JSON.stringify(ships));
 };
 
 const getProgressBar = (line, maximum) => {
@@ -168,6 +168,7 @@ const getProgressBar = (line, maximum) => {
 };
 
 let scrape = async () => {
+  console.log(`Searching for ${searchValue}...`);
   browser = await puppeteer.launch({ headless: browserVisible });
   page = await browser.newPage();
   page.setDefaultTimeout(timeout)
