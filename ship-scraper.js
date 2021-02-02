@@ -6,20 +6,8 @@ const filesystem = require("fs");
 const buildOptions = require("minimist-options");
 const minimist = require("minimist");
 const ProgressBar = require("progress");
+const sanitize = require("sanitize-filename");
 
-const dataJSON = path.resolve(path.dirname(__filename), "result.json");
-const dataTable = path.resolve(path.dirname(__filename), "result.csv");
-const workFiles = [dataJSON, dataTable];
-for (const file of workFiles) {
-  if (filesystem.existsSync(file)) {
-    try {
-      filesystem.unlinkSync(file);
-    } catch (err) {
-      console.error(err);
-      return;
-    }
-  }
-}
 
 const options = buildOptions({
   search: {
@@ -92,6 +80,25 @@ const cookieModalAcceptSelector =
 
 // const searchValue = "DRAWSKO";
 
+const fileName = sanitize(searchValue);
+const searchValue = encodeURI(searchValue);
+
+const dataJSON = path.resolve(path.dirname(__filename), fileName + ".json");
+const dataTable = path.resolve(path.dirname(__filename), fileName + ".csv");
+const workFiles = [dataJSON, dataTable];
+for (const file of workFiles) {
+  if (filesystem.existsSync(file)) {
+    try {
+      filesystem.unlinkSync(file);
+    } catch (err) {
+      console.error(err);
+      return;
+    }
+  }
+}
+
+
+
 let browser;
 let page;
 let bar;
@@ -147,8 +154,8 @@ const saveData = async () => {
       table += `${vesselName};${departurePort};"-==missing data==-"\n`;
     }
   }
-  saveToFile("result.csv", table);
-  saveToFile("result.json", JSON.stringify(ships));
+  saveToFile(fileName + ".csv", table);
+  saveToFile(fileName + ".json", JSON.stringify(ships));
 };
 
 const getProgressBar = (line, maximum) => {
