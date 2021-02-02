@@ -1,62 +1,16 @@
-//npm install puppeteer puppeteer-core -D
+
+const options = require("./arguments");
+
 const path = require("path");
 const puppeteer = require("puppeteer");
 const dateFormat = require("dateformat");
 const filesystem = require("fs");
-const buildOptions = require("minimist-options");
+
 const minimist = require("minimist");
 const ProgressBar = require("progress");
 const sanitize = require("sanitize-filename");
 
 
-const options = buildOptions({
-  search: {
-    type: "string",
-    alias: "s",
-    default: "",
-  },
-  dateformat: {
-    type: "string",
-    alias: "d",
-    default: "dd.mm.yyyy",
-  },
-
-  format: {
-    type: "boolean",
-    alias: "f",
-    default: false,
-  },
-
-  page: {
-    type: "number",
-    alias: "p",
-    default: 50,
-  },
-
-  timeout: {
-    type: "number",
-    alias: "tt",
-    default: 30000,
-  },
-
-  limit: {
-    type: "number",
-    alias: "l",
-    default: 0,
-  },
-  type: {
-    type: "number",
-    alias: "t",
-    default: 0,
-  },
-  hidden: {
-    type: "boolean",
-    alias: "b",
-    default: true,
-  },
-  published: "boolean",
-  arguments: "string",
-});
 
 const parseArgs = minimist(process.argv.slice(2), options);
 
@@ -96,6 +50,7 @@ for (const file of workFiles) {
     }
   }
 }
+
 
 
 
