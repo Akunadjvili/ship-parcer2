@@ -72,7 +72,7 @@ const searchType = type ? `/search_type:${type}` : "";
 
 
 const pagesCount = [10, 20, 50].includes(parseArgs.page) ? parseArgs.page : 50;
-const searchValue = parseArgs.search.trim();
+let searchValue = parseArgs.search.trim();
 
 const homeURL = "https://www.marinetraffic.com";
 const cookieModalAcceptSelector =
@@ -81,7 +81,7 @@ const cookieModalAcceptSelector =
 // const searchValue = "DRAWSKO";
 
 const fileName = sanitize(searchValue);
-const searchValue = encodeURI(searchValue);
+searchValue = encodeURI(searchValue);
 
 const dataJSON = path.resolve(path.dirname(__filename), `${fileName}.json`);
 const dataTable = path.resolve(path.dirname(__filename), `${fileName}.csv`);
