@@ -1,218 +1,198 @@
+// import ad from "./subroutines.js"
+const { filterUrls, clearUrl, getLinks, transformDate, getProgressBar } = require("./subroutines");
 
-const options = require("./arguments");
+const parseOptions = require("./arguments");
+const FileManager = require("./storage");
 
 const path = require("path");
 const puppeteer = require("puppeteer");
-const dateFormat = require("dateformat");
-const filesystem = require("fs");
+
 
 const minimist = require("minimist");
-const ProgressBar = require("progress");
+
 const sanitize = require("sanitize-filename");
-
-
-
-const parseArgs = minimist(process.argv.slice(2), options);
-
-const outputFormat = parseArgs.format;
-const limit = parseArgs.limit;
-const timeout = parseArgs.timeout;
-const dateformat = parseArgs.dateformat;
-
-const browserVisible = parseArgs.hidden;
-
-const type = [0, 1].includes(parseArgs.type) ? parseArgs.type : 0;
-const searchType = type ? `/search_type:${type}` : "";
-
-
-const pagesCount = [10, 20, 50].includes(parseArgs.page) ? parseArgs.page : 50;
-let searchValue = parseArgs.search.trim();
-
-const homeURL = "https://www.marinetraffic.com";
-const cookieModalAcceptSelector =
-  "#qc-cmp2-ui > div.qc-cmp2-footer.qc-cmp2-footer-overlay.qc-cmp2-footer-scrolled > div > button.css-flk0bs";
-
-// const searchValue = "DRAWSKO";
-
-const fileName = sanitize(searchValue);
-searchValue = encodeURI(searchValue);
-
-const dataJSON = path.resolve(path.dirname(__filename), `${fileName}.json`);
-const dataTable = path.resolve(path.dirname(__filename), `${fileName}.csv`);
-const workFiles = [dataJSON, dataTable];
-for (const file of workFiles) {
-  if (filesystem.existsSync(file)) {
-    try {
-      filesystem.unlinkSync(file);
-    } catch (err) {
-      console.error(err);
-      return;
-    }
-  }
-}
-
-
-
+const filesystem = require("fs");
 
 let browser;
 let page;
 let bar;
+// const ships = [];
 
-const transformDate = (stamp, format = "dd.mm.yyyy") => {
-  const date = new Date(stamp * 1000);
-  return dateFormat(date, format);
-};
+const parseArgs = minimist(process.argv.slice(2), parseOptions);
+const type = [0, 1].includes(parseArgs.type) ? parseArgs.type : 0;
+const output = parseArgs.output.trim();
 
-const clearUrl = (url, base) => {
-  const cropIndex = url.indexOf("/mmsi");
-  const cropUrl = url.slice(0, cropIndex);
-  return `${base}${cropUrl}`;
-};
 
-const getLinks = () => {
-  const links = document.querySelectorAll(".search_index_link");
-  return Array.from(links, (a) => a.getAttribute("href"));
-};
 
-const saveToFile = (name, data) => {
-  filesystem.writeFile(name, data, function (err) {
-    if (err) {
-      console.log(err);
-    }
-  });
-};
+const options = {
+  homeURL: "https://www.marinetraffic.com",
+  strict: parseArgs.strict,
+  list: parseArgs.list,
+  limit: parseArgs.limit,
+  timeout: parseArgs.timeout,
+  dateFormat: parseArgs.dateformat,
+  isBrowser: parseArgs.hidden,
+  output: output === "" ? path.resolve(path.dirname(__filename), "output") : output,
+  resultsPerPage: [10, 20, 50].includes(parseArgs.page) ? parseArgs.page : 50,
+  type: type ? `/search_type:${type}` : "",
 
-const ships = [];
+}
 
-const saveData = async () => {
-  let table = "vesselName;departurePort;departurePort.timestamp\n";
+if (options.list) {
+  const list = parseArgs.search.trim();
+  options["originalSearchLine"] = filesystem.readFileSync(list).toString().replace(/[\r]+/gm, "").trim().split("\n");
+  console.log(options["originalSearchLine"]);
+  options["encodeSearchLine"] = options["originalSearchLine"].map(encodeURI);
+  options["file"] = list.slice(0, list.indexOf("."));
+} else {
+  options["originalSearchLine"] = parseArgs.search.trim();
+  options["encodeSearchLine"] = encodeURI(parseArgs.search.trim());
+  options["file"] = sanitize(parseArgs.search.trim());
+}
+
+const fm = new FileManager(options).delete();
+
+const cookieModalAcceptSelector =
+  "#qc-cmp2-ui > div.qc-cmp2-footer.qc-cmp2-footer-overlay.qc-cmp2-footer-scrolled > div > button.css-flk0bs";
+
+
+const generate = async (ships, options) => {
+  //  let table = "vesselName;departurePort;departurePort.timestamp\n";
+  let table = "";
 
   for (const ship of ships) {
-    let departurePort = `-==missing data==-()`, timestamp = 0, vesselName = `-==missing data==- (${ship.id})`;
+    let departurePort = `-==missing data==-()`, timestamp = 0, vesselName = `-==missing data==- (id:${ship.id} / mmsi:${ship.mmsi})`;
 
     if (ship.voyageInfo && ship.voyageInfo.departurePort) {
       departurePort = ship.voyageInfo.departurePort.name;
       timestamp = ship.voyageInfo.departurePort.timestamp
         ? ship.voyageInfo.departurePort.timestamp
         : 0;
-      vesselName = `${ship.voyageInfo.vesselName} (${ship.id})`;
+      vesselName = `${ship.voyageInfo.vesselName} (id:${ship.id} / mmsi:${ship.mmsi}) `;
     } else {
       departurePort = "-==missing data==-";
       timestamp = 0;
       if (ship.vesselInfo) {
-        vesselName = `${ship.vesselInfo.name} (${ship.id})`;
+        vesselName = `${ship.vesselInfo.name} (id:${ship.id} / mmsi:${ship.mmsi})`;
       }
     }
     if (timestamp) {
-      table += `${vesselName};${departurePort};${transformDate(timestamp, dateformat)}\n`;
+      table += `${vesselName};${departurePort};${transformDate(timestamp, options.dateFormat)}\n`;
     } else {
       table += `${vesselName};${departurePort};"-==missing data==-"\n`;
     }
   }
-  saveToFile(`${fileName}.csv`, table);
-  saveToFile(`${fileName}.json`, JSON.stringify(ships));
+  return { csv: table, json: JSON.stringify(ships) }
 };
 
-const getProgressBar = (line, maximum) => {
-  return new ProgressBar(line, {
-    complete: "=",
-    incomplete: " ",
-    width: 50,
-    total: maximum,
-  });
-};
 
-let scrape = async () => {
-  console.log(`Searching for ${searchValue}...`);
-  browser = await puppeteer.launch({ headless: browserVisible });
-  page = await browser.newPage();
-  page.setDefaultTimeout(timeout)
-  page.setDefaultNavigationTimeout(0)
+
+function getAllJSONData(url) {
+  return Promise.all([
+    page
+      .waitForResponse((res) => {
+        return res.url().includes("/vesselDetails/voyageInfo/shipid:");
+      })
+      .then((response) => response.json())
+      .catch((err) => { }),
+    page
+      .waitForResponse((res) => {
+        return res.url().includes("/vesselDetails/vesselInfo/shipid:");
+      })
+      .then((response) => response.json())
+      .catch((err) => { }),
+    page
+      .waitForResponse((res) => {
+        return res.url().includes("/vesselDetails/latestPosition/shipid:");
+      })
+      .then((response) => response.json())
+      .catch((err) => { }),
+    page.goto(url, { waitUntil: "load" })
+      .catch((err) => { console.log(`#Try next time ${err}`); })
+
+  ]);
+}
+
+getItemData = async (search, options) => {
+  let links = [];
+  const ships = [];
+
+  console.log(`Searching for ${decodeURI(search)}...`);
   await page.goto(
-    `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}${searchType}/page:1/keyword:${searchValue}`,
+    `${options.homeURL}/en/ais/index/search/all/per_page:${options.resultsPerPage}${options.type}/page:1/keyword:${search}`,
     { waitUntil: "load" }
   );
-
-
-  await page.waitForSelector(cookieModalAcceptSelector);
-  await page.click(cookieModalAcceptSelector);
 
   let count = await page.evaluate(() => {
     const span = document.querySelector("#indexForm + span");
     return span ? Number(span.textContent.match(/\d+/)[0]) : 1;
   });
-  count = limit ? Math.min(count, limit) : count
+  count = options.limit ? Math.min(count, options.limit) : count
 
   bar = getProgressBar(
     "  Download: List of ships [:bar] page [:current from :total]", count);
-  let links = [];
+
 
   console.log(`\nFound ${count} pages. Processing...`);
   bar.tick(1);
-  links = await page.evaluate(getLinks);
+  links = filterUrls(await page.evaluate(getLinks), options, decodeURI(search));
   if (count > 1) {
     for (let i = 2; i <= count; i += 1) {
       bar.tick(1);
       await page.goto(
-        `${homeURL}/en/ais/index/search/all/per_page:${pagesCount}${searchType}/page:${i}/keyword:${searchValue}`,
+        `${options.homeURL}/en/ais/index/search/all/per_page:${options.resultsPerPage}${options.type}/page:${i}/keyword:${search}`,
         { waitUntil: "load" }
       );
-      links = [...links, ...(await page.evaluate(getLinks))];
+      links = [...links, ...(filterUrls(await page.evaluate(getLinks), options, decodeURI(search)))];
     }
   }
-  links = links.map((elm) => clearUrl(elm, homeURL));
-  console.log(`Found ${links.length} ships. Downloading info...`);
-  if (links.length) {
-    for (const ship of links) {
-      const id = ship.match(/\d+/)[0];
-      const url = ship;
-      ships.push({ url, id });
-    }
 
+  console.log(`Found ${links.length} ships. Downloading info...`);
+
+  if (links.length) {
+    for (const link of links) {
+      const url = clearUrl(link, options.homeURL)
+      const [id, mmsi] = link.match(/(\d+\.?\d*)/g)
+      ships.push({ url, id, mmsi });
+    }
     bar = getProgressBar(
       "  Download: Ships [:bar] ship [:current from :total]", ships.length
     );
-
     for (const ship of ships) {
       bar.tick(1);
-      // await page.waitForTimeout(1000)
-      const [voyageInfo, vesselInfo, latestPosition] = await Promise.all([
-        page
-          .waitForResponse((res) => {
-            return res.url().includes("/vesselDetails/voyageInfo/shipid:");
-          })
-          .then((response) => response.json())
-          .catch((err) => { }),
-        page
-          .waitForResponse((res) => {
-            return res.url().includes("/vesselDetails/vesselInfo/shipid:");
-          })
-          .then((response) => response.json())
-          .catch((err) => { }),
-        page
-          .waitForResponse((res) => {
-            return res.url().includes("/vesselDetails/latestPosition/shipid:");
-          })
-          .then((response) => response.json())
-          .catch((err) => { }),
-        await page.goto(ship.url, { waitUntil: "load" }).catch((err) => { console.log(`#Try next time ${response.url()}`); })
-
-      ]);
-      [ship.voyageInfo, ship.vesselInfo, ship.latestPosition] = [
-        voyageInfo,
-        vesselInfo,
-        latestPosition,
-      ];
+      [ship["voyageInfo"], ship["vesselInfo"], ship["latestPosition"]] = await getAllJSONData(ship.url);
     }
-    saveData();
+    return generate(ships, options)
   }
+}
 
-  return links;
+
+let scrape = async () => {
+
+  browser = await puppeteer.launch({ headless: options.isBrowser });
+  page = await browser.newPage();
+  page.setDefaultTimeout(options.timeout)
+  page.setDefaultNavigationTimeout(0)
+  await page.goto("https://www.marinetraffic.com/en/p/company");
+  await page.waitForSelector(cookieModalAcceptSelector);
+  await page.click(cookieModalAcceptSelector);
+
+  if (options.list) {
+    for (const search of options.encodeSearchLine) {
+      const data = await getItemData(search, options);
+      fm.appendToFile("list", data.csv)
+    }
+  } else {
+    const data = await getItemData(options.encodeSearchLine, options);
+    fm.saveToFile('csv', data.csv);
+    fm.saveToFile('json', data.json);
+  }
+  return [];
 };
 
 scrape()
   .then((value) => {
-    console.log("Loaded OK");
+    console.log("Loading completed.");
     browser.close();
   })
-  .catch((err) => console.log("Error"));
+  .catch((err) => console.log("Error loading ..."));

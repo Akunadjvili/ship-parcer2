@@ -6,18 +6,27 @@ module.exports = buildOptions({
         alias: "s",
         default: "",
     },
+    output: {
+        type: "string",
+        alias: "ot",
+        default: "",
+    },
     dateformat: {
         type: "string",
         alias: "d",
         default: "dd.mm.yyyy",
     },
 
-    format: {
+    list: {
         type: "boolean",
-        alias: "f",
+        alias: "l",
         default: false,
     },
-
+    strict: {
+        type: "boolean",
+        alias: "sm",
+        default: false,
+    },
     page: {
         type: "number",
         alias: "p",

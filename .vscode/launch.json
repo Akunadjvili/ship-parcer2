@@ -11,13 +11,15 @@
       "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}\\ship-scraper.js",
       "args": [
-        "--search=DRAWSKO",
+        // "--search=CREDO",
         "--page=50",
         "--limit=0",
-        "--type=0",
+        "--type=1",
         "--timeout=5000",
-        "--format",
-        "--hidden=true"
+        "--list",
+        "--search=ship-list.txt",
+        "--strict",
+        "--hidden=false"
       ]
       // "args": ["--search=DRS", "--page=50", "--limit=0", "--type=0", "--timeout=5000", "--format" ,"--hidden=true"]
     }
